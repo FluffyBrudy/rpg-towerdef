@@ -1,13 +1,15 @@
+from enum import Enum
 from pathlib import Path
 
 
 BASE_PATH = Path().cwd()
 MAPS_PATH = BASE_PATH / "maps" / "tmx"
+GRAPHICS_PATH = BASE_PATH / "assetes" / "graphics"
 
 FPS = 60
 
 
-SCREEN_WIDTH = 1000
+SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1000
 
 INTERACTIVE_WINDOW_WIDTH = 1000

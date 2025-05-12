@@ -1,6 +1,8 @@
+from typing import Optional
 import pygame
 import sys
 from constants import *
+from level import Level
 
 
 class Game:
@@ -10,18 +12,23 @@ class Game:
         pygame.display.set_caption("Simple Game")
         self.clock = pygame.time.Clock()
 
+        self.level = Level(1)
+        self.global_event: Optional[pygame.Event] = None
+
     def handle_event(self):
         for event in pygame.event.get():
+            self.global_event = event
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
     def draw(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.fill(pygame.Color("#25afa9"))
+        self.level.draw(self.screen)
         pygame.display.flip()
 
     def update(self):
-        pass
+        self.level.update(self.global_event)
 
     def run(self):
         while True:
@@ -31,9 +38,6 @@ class Game:
             self.clock.tick(FPS)
 
 
-class Pacman:
-    pass
-
-
 if __name__ == "__main__":
     game = Game()
+    game.run()
