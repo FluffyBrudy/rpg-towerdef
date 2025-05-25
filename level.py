@@ -1,10 +1,13 @@
-from typing import Optional, Type
+from typing import Iterable, Optional, Type, Union
 from pygame import Surface, sprite
 import pygame
 from pygame.image import load
 from pytmx import TiledMap
+from constants import MapLayer
 from maploader import LayerType, load_layer, load_map
-from sprites.tiles import StaticTile
+from sprites.buildings import Building
+from sprites.groups import CameraGroup
+from sprites.base import StaticCollidableEntity, StaticEntity
 
 
 class Level:
@@ -12,7 +15,7 @@ class Level:
         map_path = f"level{level}.tmx"
         tmxfp = load_map(map_path)
 
-        self.static_group = sprite.Group()
+        self.visible_group = CameraGroup()
         self.collision_group = sprite.Group()
 
         if tmxfp is not None:
@@ -20,36 +23,45 @@ class Level:
 
     def load_map_ui(self, tmxfp: TiledMap):
         layers = [
-            ("floor", StaticTile, self.static_group),
-            ("wall", StaticTile, self.collision_group),
-            ("stair", StaticTile, self.static_group),
-            ("floorfix", StaticTile, self.static_group),
-            ("bridge", StaticTile, self.collision_group),
+            (MapLayer.FLOOR, StaticEntity, self.visible_group),
+            (MapLayer.FLOORFIX, StaticEntity, self.visible_group),
+            (MapLayer.STAIR, StaticCollidableEntity, self.visible_group),
+            (MapLayer.WALL, StaticCollidableEntity, self.visible_group),
+            (MapLayer.BRIDGE, StaticCollidableEntity, self.visible_group),
+            (MapLayer.CASTLES, Building, self.visible_group),
+            (MapLayer.TOWERS, Building, self.visible_group),
+            (MapLayer.HOUSES, Building, self.visible_group),
+            (MapLayer.DECORATION, StaticEntity, self.visible_group),
+            (MapLayer.TREES, StaticEntity, self.visible_group),
+            (MapLayer.SHADOWS, StaticEntity, self.visible_group),
         ]
+
         for name, tile_class, group in layers:
             layer = load_layer(tmxfp, name)
             if layer:
                 self.load_layer_ui(layer, tile_class, group)
+        self.visible_group.init_order()
 
     def load_layer_ui(
-        self, layer: LayerType, Model: Type[StaticTile], group: sprite.Group
+        self,
+        layer: LayerType,
+        Model: Union[Type[StaticEntity], Type[Building], Type[StaticCollidableEntity]],
+        groups: Iterable[sprite.Group] | sprite.Group,
     ):
-        layer_file, layer_data = layer
+        layer_file, layer_data, properties = layer
         layer_tile = load(layer_file)
 
         for pos, area, correction in layer_data:
-            tile = Model(pos, area, layer_tile, correction)
-            group.add(tile)
+            if isinstance(groups, sprite.Group):
+                groups = (groups,)
+            if (Model is StaticEntity) or (Model is Building):
+                Model(pos, area, layer_tile, correction, properties["zindex"], *groups)
+            if Model is StaticCollidableEntity:
+                Model(pos, area, layer_tile, correction, properties["zindex"], *groups)
 
     def update(self, global_event: Optional[pygame.Event]):
-        if global_event is None:
-            return
-        if global_event.type == pygame.MOUSEWHEEL:
-            x, y = global_event.x, global_event.y
-            print(x, y)
-            self.static_group.update((x * 5, y * 5))
-            self.collision_group.update((x * 5, y * 5))
+        self.visible_group.update(event=global_event)
+        self.collision_group.update()
 
     def draw(self, surface: Surface):
-        self.collision_group.draw(surface)
-        self.static_group.draw(surface)
+        self.visible_group.draw(surface)

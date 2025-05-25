@@ -15,12 +15,16 @@ class Game:
         self.level = Level(1)
         self.global_event: Optional[pygame.Event] = None
 
+        pygame.mouse.set_cursor(pygame.cursors.broken_x)
+
     def handle_event(self):
+        global_event = None
         for event in pygame.event.get():
-            self.global_event = event
+            global_event = event
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+        self.global_event = global_event
 
     def draw(self):
         self.screen.fill(pygame.Color("#25afa9"))

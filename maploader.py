@@ -1,12 +1,18 @@
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, TypedDict, Union, cast
 from pathlib import Path
 from pytmx import TiledMap, TiledObject, TiledObjectGroup, TiledTileLayer
 from constants import MAPS_PATH
 from typedefs.globaltype import Coor, FCoor, ImageAreaCoor
-from pprint import pprint as print
 
 
-LayerType = Tuple[str, List[Tuple[Coor, ImageAreaCoor, Union[FCoor, None]]]]
+class LayerProperties(TypedDict):
+    zindex: int
+    model: str
+
+
+LayerType = Tuple[
+    str, List[Tuple[Coor, ImageAreaCoor, Union[FCoor, None]]], LayerProperties
+]
 
 
 def load_map(path: Union[str, Path]) -> Optional[TiledMap]:
@@ -48,7 +54,11 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
         if len(layer) == 0:
             return None
         image: str = str(layer[0].image[0])
-        return image, [get_tiledobj_data(tiledobj) for tiledobj in layer]
+        return (
+            image,
+            [get_tiledobj_data(tiledobj) for tiledobj in layer],
+            cast(LayerProperties, layer.properties),
+        )
 
     if isinstance(layer, TiledTileLayer):
         if layer.width == 0:
@@ -64,6 +74,7 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
                 )
                 for tile_data in layer.tiles()
             ],
+            cast(LayerProperties, layer.properties),
         )
     return None
 
@@ -85,7 +96,9 @@ def get_tiledobj_data(
     image: Any = tileobj.image
     pos = tileobj.x, tileobj.y
     _, area, _ = image
-    return pos, area, (tileobj.width, tileobj.height)
+    size = (tileobj.width, tileobj.height)
+
+    return pos, area, size
 
 
 if __name__ == "__main__":
@@ -94,6 +107,4 @@ if __name__ == "__main__":
     pygame.init()
     fp = load_map(MAPS_PATH / "level1.tmx")
     if fp:
-        layernames = list(fp.layernames.keys())
-        print(load_layer(fp, "floor"))
-        print(layernames)
+        pass
