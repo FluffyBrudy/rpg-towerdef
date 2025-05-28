@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, cast, override
+from typing import Any, Dict, Optional, List, Tuple, cast, override
 from pygame import MOUSEWHEEL, Event, Surface, Vector2
 import pygame
 from pygame.sprite import Group, Sprite
@@ -9,7 +9,7 @@ class CameraGroup(Group):
         super().__init__(*sprites)
         self.sorted_sprites: List[Sprite] = []
         self.camera_offset = Vector2(0, 0)
-        self.zoom_scale = 1.0
+        self.zoom_scale = 0.7
 
     def init_order(self):
         self.sorted_sprites = sorted(
@@ -29,7 +29,12 @@ class CameraGroup(Group):
             self.camera_offset.y += adjusted_y
 
     def handle_camera_zoom(self, zoom_dir: int):
-        self.zoom_scale = max(0.5, min(self.zoom_scale + 0.1 * zoom_dir, 2))
+        mouse_pos = pygame.mouse.get_pos()
+        rounded_next_zoom = round(self.zoom_scale + 0.1 * zoom_dir, 2)
+        new_zoom = max(0.5, min(rounded_next_zoom, 2))
+        zoom_ratio = new_zoom / self.zoom_scale
+        self.camera_offset = mouse_pos - (mouse_pos - self.camera_offset) * zoom_ratio
+        self.zoom_scale = new_zoom
 
     def update(self, *args: Any, **kwargs: Any) -> None:
         zoom_event = cast(Optional[Event], kwargs.get("event"))
@@ -49,6 +54,7 @@ class CameraGroup(Group):
                 int(original_image.get_width() * self.zoom_scale + 1),  # type: ignore
                 int(original_image.get_height() * self.zoom_scale + 1),  # type: ignore
             )
+
             scaled_image = pygame.transform.scale(original_image, new_size)  # type: ignore
             scaled_pos = (
                 original_rect.x * self.zoom_scale + self.camera_offset.x,  # type: ignore
@@ -56,3 +62,7 @@ class CameraGroup(Group):
             )
 
             surface.blit(scaled_image, scaled_pos)
+
+
+def is_different(a: float, b: float, epsilon: float = 1e-6) -> bool:
+    return abs(a - b) > epsilon
