@@ -5,7 +5,7 @@ from typing import Union
 
 # file associated utils
 def match_num(string: str) -> Union[float, int]:
-    test = re.match(r"(\d+)", string)
+    test = re.search(r"(\d+)", string)
     if not test:
         return float("inf")
     num_prefix = int(test.group(0))

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 
 
@@ -14,21 +14,15 @@ class MapLayer(str, Enum):
     DECORATION = "decoration"
     TREES = "trees"
     SHADOWS = "shadows"
+    WARRIOR = "warrior"
 
 
 BASE_PATH = Path().cwd()
 MAPS_PATH = BASE_PATH / "maps" / "tmx"
-GRAPHICS_PATH = BASE_PATH / "assetes" / "graphics"
+GRAPHICS_PATH = BASE_PATH / "assets" / "graphics"
 
 FPS = 60
 
 
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 1000
-
-INTERACTIVE_WINDOW_WIDTH = 1000
-STATS_BOX_WIDTH = SCREEN_WIDTH - INTERACTIVE_WINDOW_WIDTH
-
-NUM_CELLS = 29
-NUM_ROWS = SCREEN_HEIGHT // NUM_CELLS
-NUM_COLS = INTERACTIVE_WINDOW_WIDTH // NUM_CELLS

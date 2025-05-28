@@ -1,30 +1,36 @@
 from collections import deque
 from typing import Dict, List, Optional, Tuple
 import numpy as np
-
-import numpy as np
-from constants import NUM_COLS, NUM_ROWS
-
+from numpy._typing import NDArray, _8Bit
 
 Coor = Tuple[int, int]
 
 
 class ScreenGrid:
-    _grids = np.array([])
-    _directions = np.array([[0, 1], [1, 0], [-1, 0], [0, -1]])
+    _grids: NDArray[np.signedinteger[_8Bit]] = np.array([])
+    _directions = np.array([[0, 1], [1, 0], [-1, 0], [0, -1]], dtype=np.int8)
     _obstacle_ids: Optional[np.ndarray] = None
+    cell_size: Optional[int] = None
+    grid_count: Optional[Coor] = None
 
     @classmethod
-    def init_grid(cls, data: Optional[np.ndarray] = None):
-        if data and data.shape == (NUM_ROWS, NUM_COLS):
+    def init_grid(
+        cls, cell_size: int, grid_count: Coor, data: Optional[np.ndarray] = None
+    ):
+        cls.cell_size = cell_size
+        cls.grid_count = grid_count
+
+        if data and data.shape == (cls.grid_count[0], cls.grid_count[1]):
             cls._grids = np.array(data)
         else:
-            cls._grids = np.zeros((NUM_ROWS, NUM_COLS))
-        cls._obstacle_ids = np.array([])
+            cls._grids = np.zeros((cls.grid_count[0], cls.grid_count[1]), dtype=np.int8)
+        cls._obstacle_ids = np.array([], dtype=np.int8)
 
     @classmethod
     def bfs(cls, start: Coor, target: Coor):
-        visited = np.zeros((NUM_ROWS, NUM_COLS), dtype=bool)
+        if cls.grid_count is None:
+            raise ValueError("grid not initialized")
+        visited = np.zeros((cls.grid_count[0], cls.grid_count[1]), dtype=bool)
         queue: deque[Coor] = deque([start])
         possible_paths: Dict[Coor, Coor] = {}
         tracked_path: List[Coor] = []
@@ -58,7 +64,11 @@ class ScreenGrid:
             return False
         return True
 
+    @classmethod
+    def add_obstacle_at(cls, x: int, y: int, obstacle_id: int):
+        cls._obstacle_ids = obstacle_id  # type:ignore
+        cls._grids[x, y] = obstacle_id
+
 
 if __name__ == "__main__":
-    ScreenGrid.init_grid()
-    path = ScreenGrid.bfs((0, 0), (3, 3))
+    pass

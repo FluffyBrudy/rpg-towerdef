@@ -11,7 +11,9 @@ class LayerProperties(TypedDict):
 
 
 LayerType = Tuple[
-    str, List[Tuple[Coor, ImageAreaCoor, Union[FCoor, None]]], LayerProperties
+    Optional[str],
+    List[Tuple[Optional[str], Coor, ImageAreaCoor, Union[FCoor, None]]],
+    LayerProperties,
 ]
 
 
@@ -40,9 +42,7 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
         layername (str): The name of the layer to load.
 
     Returns:
-        Optional[LayerType]: A tuple containing:
-            - image path (str)
-            - a list of ((x, y), data) entries
+        Optional[LayerType]
         Returns None if the layer is missing or empty.
     """
 
@@ -54,8 +54,9 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
         if len(layer) == 0:
             return None
         image: str = str(layer[0].image[0])
+
         return (
-            image,
+            None,
             [get_tiledobj_data(tiledobj) for tiledobj in layer],
             cast(LayerProperties, layer.properties),
         )
@@ -68,6 +69,7 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
             image,
             [
                 (
+                    None,
                     (tile_data[0] * tmxfp.tilewidth, tile_data[1] * tmxfp.tileheight),
                     tile_data[2][1],
                     None,
@@ -81,7 +83,7 @@ def load_layer(tmxfp: TiledMap, layername: str) -> Optional[LayerType]:
 
 def get_tiledobj_data(
     tileobj: TiledObject,
-) -> Tuple[Coor, ImageAreaCoor, FCoor]:
+) -> Tuple[str, Coor, ImageAreaCoor, FCoor]:
     """
     Extracts position and image area data from a TiledObject.
 
@@ -95,10 +97,10 @@ def get_tiledobj_data(
     """
     image: Any = tileobj.image
     pos = tileobj.x, tileobj.y
-    _, area, _ = image
+    imfile, area, _ = image
     size = (tileobj.width, tileobj.height)
 
-    return pos, area, size
+    return imfile, pos, area, size
 
 
 if __name__ == "__main__":
