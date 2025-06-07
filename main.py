@@ -29,7 +29,7 @@ class Game:
     def draw(self):
         self.screen.fill(pygame.Color("#25afa9"))
         self.level.draw(self.screen)
-        pygame.display.flip()
+        pygame.display.update(self.screen.get_rect())
 
     def update(self):
         self.level.update(self.global_event)

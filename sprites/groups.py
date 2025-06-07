@@ -3,13 +3,16 @@ from pygame import MOUSEWHEEL, Event, Surface, Vector2
 import pygame
 from pygame.sprite import Group, Sprite
 
+from sprites.base import AnimatedSprite, StaticEntity
+
 
 class CameraGroup(Group):
     def __init__(self, *sprites: Sprite) -> None:
         super().__init__(*sprites)
         self.sorted_sprites: List[Sprite] = []
         self.camera_offset = Vector2(0, 0)
-        self.zoom_scale = 0.7
+        self.zoom_scale = 1
+        self.has_zoom_change = False
 
     def init_order(self):
         self.sorted_sprites = sorted(
@@ -41,28 +44,53 @@ class CameraGroup(Group):
         if zoom_event is not None:
             if zoom_event.type == MOUSEWHEEL:
                 self.handle_camera_zoom(zoom_event.y)
+                self.has_zoom_change = True
         self.handle_camera_movement()
         return super().update(*args, **kwargs)
 
+    def apply_zoom_if_needed(self):
+        if not self.has_zoom_change:
+            return
+        print("applied")
+        for sprite in self.sorted_sprites:
+            if isinstance(sprite, AnimatedSprite):
+                sprite.scale_frames(sprite, self.zoom_scale)
+            elif isinstance(sprite, StaticEntity):
+                sprite.scale_image(sprite, self.zoom_scale)
+        self.has_zoom_change = False
+
     @override
     def draw(self, surface: Surface) -> None:  # type: ignore
+        surf_rect = surface.get_rect()
+        zoom_changed = self.has_zoom_change
+
+        self.apply_zoom_if_needed()
+
         for sprite in self.sorted_sprites:
-            original_rect = sprite.rect  # type: ignore
-            original_image = sprite.image  # type: ignore
+            original_rect = sprite.rect
 
             new_size = (
-                int(original_image.get_width() * self.zoom_scale + 1),  # type: ignore
-                int(original_image.get_height() * self.zoom_scale + 1),  # type: ignore
+                int(original_rect.width * self.zoom_scale + 1),  # type: ignore
+                int(original_rect.height * self.zoom_scale + 1),  # type: ignore
             )
-
-            scaled_image = pygame.transform.scale(original_image, new_size)  # type: ignore
             scaled_pos = (
                 original_rect.x * self.zoom_scale + self.camera_offset.x,  # type: ignore
                 original_rect.y * self.zoom_scale + self.camera_offset.y,  # type: ignore
             )
 
+            if not surf_rect.colliderect(scaled_pos, new_size):
+                continue
+
+            scaled_image: Any = None
+
+            if isinstance(sprite, AnimatedSprite):
+                scaled_image = sprite.get_scaled_frame()
+            elif isinstance(sprite, StaticEntity):
+                scaled_image = sprite.get_scaled_image()
+            else:
+                print("somethings off not all sprite covered")
+
             surface.blit(scaled_image, scaled_pos)
 
-
-def is_different(a: float, b: float, epsilon: float = 1e-6) -> bool:
-    return abs(a - b) > epsilon
+        if zoom_changed:
+            self.has_zoom_change = False

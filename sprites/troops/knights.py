@@ -2,10 +2,11 @@ from enum import Enum
 from typing import Optional
 from random import choice
 from pygame import Rect, Surface
-from pygame.sprite import Sprite, Group
-from pygame.transform import flip
+from pygame.sprite import Group
+from pygame.transform import scale_by
 
 from constants import GRAPHICS_PATH
+from sprites.base import AnimatedSprite
 from typedefs.globaltype import Coor
 from utils.imgutils import load_frames
 
@@ -24,14 +25,20 @@ class WarriorDirection(Enum):
     NODIR = ""
 
 
-class Warrior(Sprite):
+class Warrior(AnimatedSprite):
     directionless_states = [WarriorStatus.IDLE, WarriorStatus.RUN]
 
+    @classmethod
+    def scale_frames(cls, sprite: "AnimatedSprite", scale_size: float):
+        sprite._scaled_frames = [
+            scale_by(image, (scale_size, scale_size))
+            for image in sprite._current_frames
+        ]
+
     def __init__(self, pos: Coor, zindex: int, /, *groups: Group) -> None:
-        super().__init__(*groups)
+        AnimatedSprite.__init__(self, *groups)
 
         self.zindex = zindex
-
         troop_color = "blue"
         warrior = (
             GRAPHICS_PATH / "Factions" / "Knights" / "Troops" / "Warrior" / troop_color
@@ -65,22 +72,25 @@ class Warrior(Sprite):
         self.rect = self.image.get_rect(topleft=pos)
         self.hitbox = self.rect.inflate(0, 0)
 
-        self.frame_index = 0
+        self._frame_index = 0
         self.animation_speed = choice([0.2])
 
         self.state = WarriorStatus.ATTACK
-        self.direction = WarriorDirection.BOTTOM
+        self.direction = WarriorDirection.RIGHT
 
         self.attack_radius = self.rect.width
         self.enemy_rect: Optional[Rect] = None
         self.movement_path = []
 
+        self._current_frames = self._get_current_frames()
+        Warrior.scale_frames(self, 1)
+
     def animate(self):
-        self.frame_index += self.animation_speed
-        current_frames = self._get_current_frames()
-        if self.frame_index >= len(current_frames):
-            self.frame_index = 0
-        self.image = current_frames[int(self.frame_index)]
+        self._frame_index += self.animation_speed
+        self._current_frames = self._get_current_frames()
+        if self._frame_index >= len(self._current_frames):
+            self._frame_index = 0
+        self.image = self._current_frames[int(self._frame_index)]
         self.rect = self.image.get_rect(midbottom=self.rect.midbottom)  # type: ignore
 
     def _get_current_frames(self):
@@ -92,3 +102,6 @@ class Warrior(Sprite):
     def update(self, *args, **kwargs):
         self.animate()
         enemy_rect: Optional[Rect] = kwargs.get("enemy", None)
+
+    def get_scaled_frame(self) -> Surface:
+        return self._scaled_frames[int(self._frame_index)]
