@@ -3,9 +3,9 @@ from typing import Optional
 from random import choice
 from pygame import Rect, Surface
 from pygame.sprite import Group
-from pygame.transform import scale_by
+from pygame.transform import scale, scale_by
 
-from constants import GRAPHICS_PATH
+from constants import DEFAULT_ZOOM, GRAPHICS_PATH
 from sprites.base import AnimatedSprite
 from typedefs.globaltype import Coor
 from utils.imgutils import load_frames
@@ -31,7 +31,13 @@ class Warrior(AnimatedSprite):
     @classmethod
     def scale_frames(cls, sprite: "AnimatedSprite", scale_size: float):
         sprite._scaled_frames = [
-            scale_by(image, (scale_size, scale_size))
+            scale(
+                image,
+                (
+                    int(scale_size * image.get_width()),
+                    int(scale_size * image.get_height()),
+                ),
+            )
             for image in sprite._current_frames
         ]
 
@@ -83,7 +89,7 @@ class Warrior(AnimatedSprite):
         self.movement_path = []
 
         self._current_frames = self._get_current_frames()
-        Warrior.scale_frames(self, 1)
+        Warrior.scale_frames(self, DEFAULT_ZOOM)
 
     def animate(self):
         self._frame_index += self.animation_speed

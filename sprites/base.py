@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Optional, cast
+from typing import List, Optional, cast
 from pygame import Surface
 from pygame.transform import scale, scale_by
 from pygame.sprite import Sprite, Group
+from constants import DEFAULT_ZOOM
 from typedefs.globaltype import Coor, ImageAreaCoor
 
 
@@ -35,7 +36,7 @@ class StaticEntity(Sprite):
 
         self.scaled_image = image
 
-        StaticEntity.scale_image(self, 1)
+        StaticEntity.scale_image(self, DEFAULT_ZOOM)
 
     def update(self, **kwargs):
         super().update(**kwargs)
@@ -64,8 +65,8 @@ class AnimatedSprite(Sprite, ABC):
     def __init__(self, *groups: Group) -> None:
         super().__init__(*groups)
         self._frame_index = 0
-        self._current_frames = []
-        self._scaled_frames = []
+        self._current_frames: List[Surface] = []
+        self._scaled_frames: List[Surface] = []
 
     @abstractmethod
     def get_scaled_frame(self) -> Surface:

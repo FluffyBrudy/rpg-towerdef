@@ -1,8 +1,9 @@
-from typing import Any, Dict, Optional, List, Tuple, cast, override
+from typing import Any, Optional, List, cast, override
 from pygame import MOUSEWHEEL, Event, Surface, Vector2
 import pygame
 from pygame.sprite import Group, Sprite
 
+from constants import DEFAULT_ZOOM, MAX_ZOOM_LIMIT, MIN_ZOOM_LIMIT, ZOOM_CHANGE_FACTOR
 from sprites.base import AnimatedSprite, StaticEntity
 
 
@@ -11,7 +12,7 @@ class CameraGroup(Group):
         super().__init__(*sprites)
         self.sorted_sprites: List[Sprite] = []
         self.camera_offset = Vector2(0, 0)
-        self.zoom_scale = 1
+        self.zoom_scale = DEFAULT_ZOOM
         self.has_zoom_change = False
 
     def init_order(self):
@@ -33,9 +34,9 @@ class CameraGroup(Group):
 
     def handle_camera_zoom(self, zoom_dir: int):
         mouse_pos = pygame.mouse.get_pos()
-        rounded_next_zoom = round(self.zoom_scale + 0.1 * zoom_dir, 2)
-        new_zoom = max(0.5, min(rounded_next_zoom, 2))
-        zoom_ratio = new_zoom / self.zoom_scale
+        next_zoom = self.zoom_scale + ZOOM_CHANGE_FACTOR * zoom_dir
+        new_zoom = max(MIN_ZOOM_LIMIT, min(next_zoom, MAX_ZOOM_LIMIT))
+        zoom_ratio = round(new_zoom / self.zoom_scale, 2)
         self.camera_offset = mouse_pos - (mouse_pos - self.camera_offset) * zoom_ratio
         self.zoom_scale = new_zoom
 
@@ -51,7 +52,6 @@ class CameraGroup(Group):
     def apply_zoom_if_needed(self):
         if not self.has_zoom_change:
             return
-        print("applied")
         for sprite in self.sorted_sprites:
             if isinstance(sprite, AnimatedSprite):
                 sprite.scale_frames(sprite, self.zoom_scale)
@@ -69,13 +69,14 @@ class CameraGroup(Group):
         for sprite in self.sorted_sprites:
             original_rect = sprite.rect
 
-            new_size = (
-                int(original_rect.width * self.zoom_scale + 1),  # type: ignore
-                int(original_rect.height * self.zoom_scale + 1),  # type: ignore
-            )
             scaled_pos = (
-                original_rect.x * self.zoom_scale + self.camera_offset.x,  # type: ignore
-                original_rect.y * self.zoom_scale + self.camera_offset.y,  # type: ignore
+                int(original_rect.x * self.zoom_scale + self.camera_offset.x),
+                int(original_rect.y * self.zoom_scale + self.camera_offset.y),
+            )
+
+            new_size = (
+                int(original_rect.width * self.zoom_scale),
+                int(original_rect.height * self.zoom_scale),
             )
 
             if not surf_rect.colliderect(scaled_pos, new_size):

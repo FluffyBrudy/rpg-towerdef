@@ -44,7 +44,7 @@ def load_image(fp: str, /, crop=False) -> pygame.Surface:
         surface = frombytes(image_bytes, size, "RGBA")
         return surface
     else:
-        return imload(fp)
+        return imload(fp).convert_alpha()
 
 
 def load_frames(frame_dir: str | Path, /, crop=False) -> Tuple[pygame.Surface]:

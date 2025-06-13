@@ -17,6 +17,8 @@ class Game:
 
         pygame.mouse.set_cursor(pygame.cursors.broken_x)
 
+        self.screen_rect = self.screen.get_rect()
+
     def handle_event(self):
         global_event = None
         for event in pygame.event.get():
@@ -27,9 +29,9 @@ class Game:
         self.global_event = global_event
 
     def draw(self):
-        self.screen.fill(pygame.Color("#25afa9"))
+        self.screen.fill(pygame.Color("#25afa9"), self.screen_rect)
         self.level.draw(self.screen)
-        pygame.display.update(self.screen.get_rect())
+        pygame.display.update(self.screen_rect)
 
     def update(self):
         self.level.update(self.global_event)

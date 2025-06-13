@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 
 
@@ -26,3 +26,9 @@ FPS = 60
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 800
+
+DEFAULT_ZOOM = 1.0
+ZOOM_ANIMATION_DURATION = 2
+MIN_ZOOM_LIMIT = 0.5
+MAX_ZOOM_LIMIT = 2
+ZOOM_CHANGE_FACTOR = 0.1
