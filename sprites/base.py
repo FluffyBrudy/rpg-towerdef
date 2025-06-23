@@ -30,13 +30,8 @@ class StaticEntity(Sprite):
         self.rect = self.image.get_rect(topleft=pos)
         self.zindex = zindex
 
-        self.scaled_image = scale_image(self.image, DEFAULT_ZOOM)
-
     def update(self, **kwargs):
         super().update(**kwargs)
-
-    def get_scaled_image(self):
-        return self.scaled_image
 
 
 class StaticCollidableEntity(StaticEntity):

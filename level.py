@@ -58,16 +58,6 @@ class Level:
         groups: Iterable[sprite.Group] | sprite.Group,
         is_obstacle=False,
     ):
-        # this complexity came with my intention to return homogenous data for every layer of map
-
-        # If the first argument is None, each tuple in the second argument must have a unique image (str) as the first element.
-
-        # If the first argument is not None, the first element in each tuple of the second argument must be None.
-
-        # Examples:
-        # - (None, [(image1, ...), (image2, ...)])      # valid: images provided in tuples
-        # - ('some_image', [(None, ...), (None, ...)])  # valid: images are implied by the first argument
-
         tilesheet_path, layer_data, properties = layer
         tilesheet = None
         if tilesheet_path is not None:
@@ -75,27 +65,36 @@ class Level:
 
         zindex = properties.get("zindex", 0)
 
+        if isinstance(groups, sprite.Group):
+            groups = (groups,)
+
         for image_path, pos, area, correction in layer_data:
-            image = None
             if tilesheet is not None:
                 image = tilesheet
             else:
-                assert type(image_path) == str  # throw later
+                assert isinstance(image_path, str), "Expected image_path to be a string"
                 image = load(image_path)
 
-            assert type(image) == Surface  # throw later
-            if isinstance(groups, sprite.Group):
-                groups = (groups,)
+            assert isinstance(image, Surface), "Loaded image is not a Surface"
+
             if Model is StaticEntity:
-                Model(pos, area, image, correction, zindex, *groups)
+                entity = Model(pos, area, image, correction, zindex)
             elif Model is StaticCollidableEntity:
-                Model(pos, area, image, correction, zindex, *groups)
+                entity = Model(pos, area, image, correction, zindex)
             elif Model is Warrior:
-                Model(pos, properties["zindex"], *groups)
+                entity = Model(pos, properties["zindex"])
+            else:
+                raise TypeError(f"Unsupported model type: {Model}")
+
+            for group in groups:
+                group.add(entity)
+
             row = int(pos[1] // ScreenGrid.cell_size)  # type: ignore
             col = int(pos[0] // ScreenGrid.cell_size)  # type: ignore
+
             if is_obstacle:
                 ScreenGrid.add_obstacle_at(row, col, -1)
+        self.visible_group.init_order()
 
     def update(self, global_event: Optional[pygame.Event]):
         self.visible_group.update(event=global_event)
