@@ -109,7 +109,7 @@ class CameraGroup(Group):
 
         self.apply_zoom_if_needed()
 
-        new_cursor_type = self.mouse.get_current_cursor()
+        new_cursor_type = "pointer"
 
         visible_rect = surface.blit(self.static_layer_surface, self.camera_offset)
         for sprite in self.sprites():
@@ -133,11 +133,6 @@ class CameraGroup(Group):
                 scaled_image = sprite.get_scaled_frame()
                 if new_rect.collidepoint(self.mouse.pos):
                     new_cursor_type = "move"
-
-            else:
-                print("Something's off: not all sprite types covered.")
-                pygame.quit()
-                sys.exit()
 
             surface.blit(scaled_image, scaled_pos)
 
