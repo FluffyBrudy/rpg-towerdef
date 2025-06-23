@@ -1,3 +1,4 @@
+import sys
 from typing import Any, Optional, List, cast, override
 from pygame import MOUSEWHEEL, Event, Surface, Vector2
 import pygame
@@ -5,6 +6,8 @@ from pygame.sprite import Group, Sprite
 
 from constants import DEFAULT_ZOOM, MAX_ZOOM_LIMIT, MIN_ZOOM_LIMIT, ZOOM_CHANGE_FACTOR
 from sprites.base import AnimatedSprite, StaticEntity
+from ui.mouse import CustomMouse
+from utils.imgutils import scale_frames, scale_image
 
 
 class CameraGroup(Group):
@@ -14,6 +17,8 @@ class CameraGroup(Group):
         self.camera_offset = Vector2(0, 0)
         self.zoom_scale = DEFAULT_ZOOM
         self.has_zoom_change = False
+
+        self.mouse = CustomMouse()
 
     def init_order(self):
         self.sorted_sprites = sorted(
@@ -40,7 +45,21 @@ class CameraGroup(Group):
         self.camera_offset = mouse_pos - (mouse_pos - self.camera_offset) * zoom_ratio
         self.zoom_scale = new_zoom
 
+    def apply_zoom_if_needed(self):
+        if not self.has_zoom_change:
+            return
+        for sprite in self.sorted_sprites:
+            if isinstance(sprite, AnimatedSprite):
+                sprite.scaled_frames = scale_frames(
+                    sprite.current_frames, self.zoom_scale
+                )
+            elif isinstance(sprite, StaticEntity):
+                sprite.scaled_image = scale_image(sprite.image, self.zoom_scale)  # type: ignore
+        self.has_zoom_change = False
+
+    @override
     def update(self, *args: Any, **kwargs: Any) -> None:
+        self.mouse.update()
         zoom_event = cast(Optional[Event], kwargs.get("event"))
         if zoom_event is not None:
             if zoom_event.type == MOUSEWHEEL:
@@ -49,49 +68,50 @@ class CameraGroup(Group):
         self.handle_camera_movement()
         return super().update(*args, **kwargs)
 
-    def apply_zoom_if_needed(self):
-        if not self.has_zoom_change:
-            return
-        for sprite in self.sorted_sprites:
-            if isinstance(sprite, AnimatedSprite):
-                sprite.scale_frames(sprite, self.zoom_scale)
-            elif isinstance(sprite, StaticEntity):
-                sprite.scale_image(sprite, self.zoom_scale)
-        self.has_zoom_change = False
-
     @override
     def draw(self, surface: Surface) -> None:  # type: ignore
-        surf_rect = surface.get_rect()
+        surf_rect = pygame.Surface()
         zoom_changed = self.has_zoom_change
 
         self.apply_zoom_if_needed()
 
+        new_cursor_type = self.mouse.get_current_cursor()
+
         for sprite in self.sorted_sprites:
             original_rect = sprite.rect
 
-            scaled_pos = (
-                int(original_rect.x * self.zoom_scale + self.camera_offset.x),
-                int(original_rect.y * self.zoom_scale + self.camera_offset.y),
-            )
+            scaled_pos_x = original_rect.x * self.zoom_scale + self.camera_offset.x  # type: ignore
+            scaled_pos_y = original_rect.y * self.zoom_scale + self.camera_offset.y  # type: ignore
+            scaled_pos = (round(scaled_pos_x), round(scaled_pos_y))
 
-            new_size = (
-                int(original_rect.width * self.zoom_scale),
-                int(original_rect.height * self.zoom_scale),
-            )
+            new_size_x = original_rect.width * self.zoom_scale  # type: ignore
+            new_size_y = original_rect.height * self.zoom_scale  # type: ignore
+            new_size = (round(new_size_x), round(new_size_y))
 
-            if not surf_rect.colliderect(scaled_pos, new_size):
+            new_rect = pygame.Rect(scaled_pos, new_size)
+            if not new_rect.colliderect(surf_rect):
                 continue
 
             scaled_image: Any = None
 
             if isinstance(sprite, AnimatedSprite):
                 scaled_image = sprite.get_scaled_frame()
+                if new_rect.collidepoint(self.mouse.pos):
+                    new_cursor_type = "move"
             elif isinstance(sprite, StaticEntity):
                 scaled_image = sprite.get_scaled_image()
+                if new_rect.collidepoint(self.mouse.pos):
+                    new_cursor_type = "pointer"
             else:
-                print("somethings off not all sprite covered")
+                print("Something's off: not all sprite types covered.")
+                pygame.quit()
+                sys.exit()
 
             surface.blit(scaled_image, scaled_pos)
+
+        self.mouse.change_cursor(new_cursor_type)
+
+        self.mouse.draw(surface)
 
         if zoom_changed:
             self.has_zoom_change = False

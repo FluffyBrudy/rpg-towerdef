@@ -58,7 +58,7 @@ class Level:
         groups: Iterable[sprite.Group] | sprite.Group,
         is_obstacle=False,
     ):
-        # sorry for this but this complexity came with my intention to return homogenous data for every layer of map
+        # this complexity came with my intention to return homogenous data for every layer of map
 
         # If the first argument is None, each tuple in the second argument must have a unique image (str) as the first element.
 

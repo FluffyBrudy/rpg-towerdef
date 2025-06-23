@@ -15,7 +15,7 @@ class Game:
         self.level = Level(1)
         self.global_event: Optional[pygame.Event] = None
 
-        pygame.mouse.set_cursor(pygame.cursors.broken_x)
+        pygame.mouse.set_visible(False)
 
         self.screen_rect = self.screen.get_rect()
 
@@ -38,10 +38,10 @@ class Game:
 
     def run(self):
         while True:
+            fps = self.clock.tick(FPS)
             self.handle_event()
             self.update()
             self.draw()
-            self.clock.tick(FPS)
 
 
 if __name__ == "__main__":

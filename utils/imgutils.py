@@ -1,11 +1,13 @@
 from enum import Enum
 from pathlib import Path
 from posixpath import dirname
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, Iterable, List, Optional, Tuple, cast
 from PIL import Image
 import pygame
 from pygame.image import frombytes, load as imload
 import os, pprint
+
+from pygame.transform import scale
 
 from typedefs.globaltype import StateFrames
 from utils.pathutils import list_files_sorted
@@ -82,3 +84,26 @@ def load_uniform_state_frames(frames_dir: str) -> StateFrames:
         state_frames_map[_dir] = tuple(surfaces)
 
     return state_frames_map
+
+
+def scale_frames(frames: Iterable[pygame.Surface], scale_size: float):
+    return [
+        scale(
+            image,
+            (
+                int(scale_size * image.get_width()),
+                int(scale_size * image.get_height()),
+            ),
+        )
+        for image in frames
+    ]
+
+
+def scale_image(image: pygame.Surface, scale_size):
+    return scale(
+        image,
+        (
+            int(scale_size * image.get_width()),
+            int(scale_size * image.get_height()),
+        ),
+    )

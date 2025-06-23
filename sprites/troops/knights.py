@@ -3,12 +3,12 @@ from typing import Optional
 from random import choice
 from pygame import Rect, Surface
 from pygame.sprite import Group
-from pygame.transform import scale, scale_by
+from pygame.transform import scale
 
 from constants import DEFAULT_ZOOM, GRAPHICS_PATH
 from sprites.base import AnimatedSprite
 from typedefs.globaltype import Coor
-from utils.imgutils import load_frames
+from utils.imgutils import load_frames, scale_frames
 
 
 class WarriorStatus(Enum):
@@ -27,19 +27,6 @@ class WarriorDirection(Enum):
 
 class Warrior(AnimatedSprite):
     directionless_states = [WarriorStatus.IDLE, WarriorStatus.RUN]
-
-    @classmethod
-    def scale_frames(cls, sprite: "AnimatedSprite", scale_size: float):
-        sprite._scaled_frames = [
-            scale(
-                image,
-                (
-                    int(scale_size * image.get_width()),
-                    int(scale_size * image.get_height()),
-                ),
-            )
-            for image in sprite._current_frames
-        ]
 
     def __init__(self, pos: Coor, zindex: int, /, *groups: Group) -> None:
         AnimatedSprite.__init__(self, *groups)
@@ -88,18 +75,18 @@ class Warrior(AnimatedSprite):
         self.enemy_rect: Optional[Rect] = None
         self.movement_path = []
 
-        self._current_frames = self._get_current_frames()
-        Warrior.scale_frames(self, DEFAULT_ZOOM)
+        self.current_frames = self.get_current_frames()
+        self.scaled_frames = scale_frames(self.current_frames, DEFAULT_ZOOM)
 
     def animate(self):
         self._frame_index += self.animation_speed
-        self._current_frames = self._get_current_frames()
-        if self._frame_index >= len(self._current_frames):
+        self.current_frames = self.get_current_frames()
+        if self._frame_index >= len(self.current_frames):
             self._frame_index = 0
-        self.image = self._current_frames[int(self._frame_index)]
+        self.image = self.current_frames[int(self._frame_index)]
         self.rect = self.image.get_rect(midbottom=self.rect.midbottom)  # type: ignore
 
-    def _get_current_frames(self):
+    def get_current_frames(self):
         state = self.state_frames[self.state]  # type: ignore
         if self.state in Warrior.directionless_states:
             return state[WarriorDirection.NODIR]
@@ -109,5 +96,5 @@ class Warrior(AnimatedSprite):
         self.animate()
         enemy_rect: Optional[Rect] = kwargs.get("enemy", None)
 
-    def get_scaled_frame(self) -> Surface:
-        return self._scaled_frames[int(self._frame_index)]
+    def handle_click(self):
+        pass
