@@ -79,7 +79,7 @@ class CameraGroup(Group):
         self.prerender_static_tiles()
 
     def prerender_static_tiles(self):
-        w, h = pygame.display.get_surface().size
+        w, h = pygame.display.get_surface().size  # type: ignore
         size = int(w * 1.5), int(h * 1.5)
         self.static_layer_surface = pygame.Surface(size, SRCALPHA)
 
